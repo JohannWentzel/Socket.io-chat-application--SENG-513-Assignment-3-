@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Super Amazing Chat Web App!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      #messages { list-style-type: none; margin-bottom: 10; padding: 0; height: 85%; overflow-y: scroll; overflow-x: hidden; display: flex; flex-flow: column nowrap;}
+      #messages li { padding: 5px 10px;  width:100%;}
+      #messages > :first-child { margin-top: auto !important;}
+      #chatWindow {height: 100vh;border:1px solid #eee;}
+      .serverMsg {font-weight: bold; color: #A0A0A0;}
+      .user {font-weight: bold}
+      .self {font-style: italic;}
+
+    </style>
+  </head>
+
+  <body>
+
+    <!-- <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form> -->
+
+    <!-- <p class="col-xs-12 text-center" id="username">Your username:</p> -->
+
+    <div id="chatWindow" class = "col-sm-10">
+      <ul id="messages" class="list-group"></ul>
+      <div class="col-xs-12">
+        <div class="input-group">
+          <input type="text" class="form-control" id="m" placeholder="Enter a message">
+          <span class="input-group-btn">
+            <button class="btn btn-secondary" id="sendButton" type="submit">Send</button>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="userList col-sm-2">
+      <h3 class="text-center">Currently Online</h3>
+      <ul id="userList" class="col-xs-12">
+        <li class="list-group-item">Johann</li>
+        <li class="list-group-item">Johann</li>
+      </ul>
+    </div>
+
+  </body>
+
+
+<!--
+    <div class="container-fluid">
+
+      <div class="row">
+        <div class="col-xs-9" style="background-color:lavenderblush;border:1px solid black;">
+          <ul id="messages"></ul>
+
+          <div class="form-inline text-center" style="bottom:0;">
+
+            <input id="m" class="form-control" style="width:85%;" placeholder="Type your message...">
+            <button type="submit" class="btn btn-primary">Send</button>
+          </div>
+        </div>
+        <div class="col-xs-3" style="background-color:lavender;">.col-sm-3</div>
+      </div>
+    </div>
+-->
+
+
+<!-- SCRIPTS -->
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script type="text/javascript" src="/../scripts.js"></script>
+    <script>
+      var socket = io();
+      $('#sendButton').click(function(){
+
+        if ($('#m').val() === ""){
+          return;
+        }
+
+        socket.emit('chat message', $('#m').val());
+        $('#m').val('');
+        return false;
+      });
+
+      $('.input-group').keypress(function(e){
+        if(e.which == 13){
+          if ($('#m').val() === ""){
+            return;
+          }
+          socket.emit('chat message', $('#m').val());
+          $('#m').val('');
+          return false;
+        }
+      })
+
+      socket.on('chat message', function(msgJSON){
+        var newElement;
+        if (msgJSON["messageType"] == "server"){
+          console.log("server msg");
+          var htmlString = "<span class=\"serverMsg\">(" + msgJSON["time"] + ") "+ msgJSON["message"] + "</span>";
+          newElement = $('<li class=\"list-group-item\">').html(htmlString);
+        }
+        else {
+
+          var timeHTML = "<span class=\"serverMsg\">(" + msgJSON["time"] + ") </span>";
+          var userHTML = "<span class=\"user\" style=\"color:#" + msgJSON["userInfo"]["color"] + "\">" + msgJSON["userInfo"]["name"] +"</span>: ";
+          var htmlString = timeHTML + userHTML+ msgJSON["message"];
+          newElement = $('<li class=\"list-group-item\">').html(htmlString);
+
+          if (socket.id == msgJSON["userInfo"]["id"]){
+            newElement.css("background","#ccc");
+          }
+
+        }
+
+        $('#messages').append(newElement);
+
+        $('#messages').stop ().animate ({
+            scrollTop: $('#messages')[0].scrollHeight
+        });
+
+      });
+
+      socket.on('userListUpdate', function(userList){
+        console.log("User list updating");
+        $('#userList').html('');
+        for (var i in userList){
+          var htmlString = userList[i]["name"];
+          if (userList[i]["id"] == socket.id){
+            htmlString = htmlString + " <span style=\"font-weight:bold;\">(You)</span>";
+          }
+          $('#userList').append($('<li class=\"list-group-item\">').html(htmlString));
+
+        }
+      });
+
+      socket.on('message log', function(chatLog){
+        console.log("getting chat log");
+        console.log(chatLog);
+        chatLog.map(function(i){
+          var newElement;
+          if (i["messageType"] == "server"){
+            console.log("server msg");
+            var htmlString = "<span class=\"serverMsg\">(" + i["time"] + ") "+ i["message"] + "</span>";
+            newElement = $('<li class=\"list-group-item\">').html(htmlString);
+          }
+          else {
+
+            //$('#messages').append($('<li>').text(msgJSON["message"]));
+
+            var timeHTML = "<span class=\"serverMsg\">(" + i["time"] + ") </span>";
+            // console.log(msgJSON["userInfo"]["color"]);
+            var userHTML = "<span class=\"user\" style=\"color:#" + i["userInfo"]["color"] + "\">" + i["userInfo"]["name"] +"</span>: ";
+
+            var htmlString = timeHTML + userHTML+ i["message"];
+
+            newElement = $('<li class=\"list-group-item\">').html(htmlString);
+
+            // console.log(socket.id + " = " + msgJSON["userInfo"]["id"] + "?");
+
+            if (socket.id == i["userInfo"]["id"]){
+              newElement.css("background","#ccc");
+            }
+
+          }
+
+          $('#messages').append(newElement);
+
+          $('#messages').stop ().animate ({
+              scrollTop: $('#messages')[0].scrollHeight
+          });
+        });
+      });
+
+      socket.on('cookie check', function(info){
+        console.log("checking cookie");
+        if (document.cookie.indexOf("name=") >= 0){
+          var cookieName = document.cookie.replace(/(?:(?:^|.*;\s*)name\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+          var cookieColor = document.cookie.replace(/(?:(?:^|.*;\s*)color\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+
+          console.log(document.cookie);
+          console.log("found cookie: name:", cookieName, ", color:", cookieColor);
+
+          socket.emit('chat message', "/cookienick " + cookieName);
+          socket.emit('chat message',"/nickcolor " + cookieColor);
+
+        }
+        else{
+          console.log("no cookie found, assigning default");
+          assignCookie(info[0],info[1]);
+        }
+      });
+
+      socket.on('refresh cookie', function(info){
+        assignCookie(info[0],info[1]);
+      })
+
+
+
+      function assignCookie(userName,color){
+        console.log("Saving cookie: username:"+userName+", color:",color);
+
+        document.cookie = "name=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "color=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+        document.cookie = "name="+userName+";expires=Sat, 01 Apr 2017 23:59:59 GMT";
+        document.cookie = "color="+color+";expires=Sat, 01 Apr 2017 23:59:59 GMT";
+
+      }
+    </script>
+  </body>
+</html>
