@@ -4,9 +4,9 @@ Socket.io Chat Application
 SENG 513 Assignment 3 - Johann Wentzel
 --------------
 
-Requires [Node.js](https://www.google.com) to run.
+This is a simple local chat application to demonstrate [Socket.io](https://socket.io/) in conjunction with [Bootstrap](http://getbootstrap.com/) and [Node.js](https://nodejs.org/en/).
 
-Launch the app in Node.js by navigating to the directory and entering:
+Assuming you already have Node.js installed, run the app in Node.js by navigating your terminal to the project directory and entering:
   `node index.js`
 
 You can then show the app in a browser by navigating to
